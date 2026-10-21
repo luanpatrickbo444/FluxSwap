@@ -26,7 +26,7 @@ export const useApprove = (lpContract: Contract, pid: number) => {
   return { onApprove: handleApprove }
 }
 
-// Approve a Pool
+// Approve a Pool comentando e forçando update
 export const useSousApprove = (lpContract: Contract, sousId) => {
   const dispatch = useDispatch()
   const { account }: { account: string } = useWallet()
