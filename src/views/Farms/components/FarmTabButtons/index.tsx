@@ -1,22 +1,44 @@
-import React from 'react'
 import styled from 'styled-components'
-import { useRouteMatch, Link } from 'react-router-dom'
-import { ButtonMenu, ButtonMenuItem } from '@pancakeswap-libs/uikit'
-import useI18n from 'hooks/useI18n'
+import { ButtonMenu, ButtonMenuItem, NotificationDot } from 'uikit'
+import { useTranslation } from 'contexts/Localization'
+import { useRouter } from 'next/router'
+import { NextLinkFromReactRouter } from 'components/NextLink'
 
-const FarmTabButtons = () => {
-  const { url, isExact } = useRouteMatch()
-  const TranslateString = useI18n()
+interface FarmTabButtonsProps {
+  hasStakeInFinishedFarms: boolean
+}
+
+const FarmTabButtons: React.FC<FarmTabButtonsProps> = ({ hasStakeInFinishedFarms }) => {
+  const router = useRouter()
+  const { t } = useTranslation()
+
+  let activeIndex
+  switch (router.pathname) {
+    case '/farms':
+      activeIndex = 0
+      break
+    case '/farms/history':
+      activeIndex = 1
+      break
+    case '/farms/archived':
+      activeIndex = 2
+      break
+    default:
+      activeIndex = 0
+      break
+  }
 
   return (
     <Wrapper>
-      <ButtonMenu activeIndex={!isExact ? 1 : 0} size="sm" variant="subtle">
-        <ButtonMenuItem as={Link} to={`${url}`}>
-          {TranslateString(999, 'Active')}
+      <ButtonMenu activeIndex={activeIndex} scale="sm" variant="subtle">
+        <ButtonMenuItem as={NextLinkFromReactRouter} to="/farms">
+          {t('Live')}
         </ButtonMenuItem>
-        <ButtonMenuItem as={Link} to={`${url}/history`}>
-          {TranslateString(999, 'Inactive')}
-        </ButtonMenuItem>
+        <NotificationDot show={hasStakeInFinishedFarms}>
+          <ButtonMenuItem as={NextLinkFromReactRouter} to="/farms/history" id="finished-farms-button">
+            {t('Finished')}
+          </ButtonMenuItem>
+        </NotificationDot>
       </ButtonMenu>
     </Wrapper>
   )
@@ -28,5 +50,13 @@ const Wrapper = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 32px;
+
+  a {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  ${({ theme }) => theme.mediaQueries.sm} {
+    margin-left: 16px;
+  }
 `

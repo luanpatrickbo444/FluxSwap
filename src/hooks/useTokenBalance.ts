@@ -1,66 +1,71 @@
-import { useEffect, useState } from 'react'
+import { useWeb3React } from '@web3-react/core'
 import BigNumber from 'bignumber.js'
-import { useWallet } from '@binance-chain/bsc-use-wallet'
-import { provider } from 'web3-core'
-import cakeABI from 'config/abi/cake.json'
-import { getContract } from 'utils/web3'
-import { getTokenBalance } from 'utils/erc20'
-import { getCakeAddress } from 'utils/addressHelpers'
-import useRefresh from './useRefresh'
+import tokens from 'config/constants/tokens'
+import { FAST_INTERVAL, SLOW_INTERVAL } from 'config/constants'
+import { BigNumber as EthersBigNumber } from '@ethersproject/bignumber'
+import { Zero } from '@ethersproject/constants'
+import useSWR from 'swr'
+import { BIG_ZERO } from 'utils/bigNumber'
+import { simpleRpcProvider } from 'utils/providers'
+import { useCake, useTokenContract } from './useContract'
+import { useSWRContract } from './useSWRContract'
 
 const useTokenBalance = (tokenAddress: string) => {
-  const [balance, setBalance] = useState(new BigNumber(0))
-  const { account, ethereum }: { account: string; ethereum: provider } = useWallet()
-  const { fastRefresh } = useRefresh()
+  const { account } = useWeb3React()
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const res = await getTokenBalance(ethereum, tokenAddress, account)
-      setBalance(new BigNumber(res))
-    }
+  const contract = useTokenContract(tokenAddress, false)
+  const { data, status, ...rest } = useSWRContract(
+    account
+      ? {
+          contract,
+          methodName: 'balanceOf',
+          params: [account],
+        }
+      : null,
+    {
+      refreshInterval: FAST_INTERVAL,
+    },
+  )
 
-    if (account && ethereum) {
-      fetchBalance()
-    }
-  }, [account, ethereum, tokenAddress, fastRefresh])
-
-  return balance
+  return {
+    ...rest,
+    fetchStatus: status,
+    balance: data ? new BigNumber(data.toString()) : BIG_ZERO,
+  }
 }
 
 export const useTotalSupply = () => {
-  const { slowRefresh } = useRefresh()
-  const [totalSupply, setTotalSupply] = useState<BigNumber>()
+  const { reader: cakeContract } = useCake()
+  const { data } = useSWRContract([cakeContract, 'totalSupply'], {
+    refreshInterval: SLOW_INTERVAL,
+  })
 
-  useEffect(() => {
-    async function fetchTotalSupply() {
-      const cakeContract = getContract(cakeABI, getCakeAddress())
-      const supply = await cakeContract.methods.totalSupply().call()
-      setTotalSupply(new BigNumber(supply))
-    }
-
-    fetchTotalSupply()
-  }, [slowRefresh])
-
-  return totalSupply
+  return data ? new BigNumber(data.toString()) : null
 }
 
 export const useBurnedBalance = (tokenAddress: string) => {
-  const [balance, setBalance] = useState(new BigNumber(0))
-  const { account, ethereum }: { account: string; ethereum: provider } = useWallet()
-  const { slowRefresh } = useRefresh()
+  const contract = useTokenContract(tokenAddress, false)
+  const { data } = useSWRContract([contract, 'balanceOf', ['0x000000000000000000000000000000000000dEaD']], {
+    refreshInterval: SLOW_INTERVAL,
+  })
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      const res = await getTokenBalance(ethereum, tokenAddress, '0x000000000000000000000000000000000000dEaD')
-      setBalance(new BigNumber(res))
-    }
+  return data ? new BigNumber(data.toString()) : BIG_ZERO
+}
 
-    if (account && ethereum) {
-      fetchBalance()
-    }
-  }, [account, ethereum, tokenAddress, slowRefresh])
+export const useGetBnbBalance = () => {
+  const { account } = useWeb3React()
+  const { status, data, mutate } = useSWR([account, 'bnbBalance'], async () => {
+    return simpleRpcProvider.getBalance(account)
+  })
 
-  return balance
+  return { balance: data || Zero, fetchStatus: status, refresh: mutate }
+}
+
+export const useGetCakeBalance = () => {
+  const { balance, fetchStatus } = useTokenBalance(tokens.cake.address)
+
+  // TODO: Remove ethers conversion once useTokenBalance is converted to ethers.BigNumber
+  return { balance: EthersBigNumber.from(balance.toString()), fetchStatus }
 }
 
 export default useTokenBalance

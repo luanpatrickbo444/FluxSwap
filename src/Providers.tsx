@@ -1,37 +1,41 @@
-import React from 'react'
-import { ModalProvider } from '@pancakeswap-libs/uikit'
-import bsc, { UseWalletProvider } from '@binance-chain/bsc-use-wallet'
+import { ModalProvider, light, dark } from 'uikit'
+import { Web3ReactProvider } from '@web3-react/core'
 import { Provider } from 'react-redux'
-import getRpcUrl from 'utils/getRpcUrl'
-import { LanguageContextProvider } from 'contexts/Localisation/languageContext'
-import { ThemeContextProvider } from 'contexts/ThemeContext'
-import { BlockContextProvider } from 'contexts/BlockContext'
-import { RefreshContextProvider } from 'contexts/RefreshContext'
-import store from 'state'
+import { SWRConfig } from 'swr'
+import { ThemeProvider } from 'styled-components'
+import { getLibrary } from 'utils/web3React'
+import { LanguageProvider } from 'contexts/Localization'
+import { ToastsProvider } from 'contexts/ToastsContext'
+import { fetchStatusMiddleware } from 'hooks/useSWRContract'
+import { Store } from '@reduxjs/toolkit'
+import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from 'next-themes'
 
-const Providers: React.FC = ({ children }) => {
-  const rpcUrl = getRpcUrl()
+const StyledThemeProvider = (props) => {
+  const { resolvedTheme } = useNextTheme()
+  return <ThemeProvider theme={resolvedTheme === 'dark' ? dark : light} {...props} />
+}
 
+const Providers: React.FC<{ store: Store }> = ({ children, store }) => {
   return (
-    <Provider store={store}>
-      <ThemeContextProvider>
-        <LanguageContextProvider>
-          <UseWalletProvider
-            chainId={parseInt(process.env.REACT_APP_CHAIN_ID)}
-            connectors={{
-              walletconnect: { rpcUrl },
-              bsc,
-            }}
-          >
-            <BlockContextProvider>
-              <RefreshContextProvider>
-                <ModalProvider>{children}</ModalProvider>
-              </RefreshContextProvider>
-            </BlockContextProvider>
-          </UseWalletProvider>
-        </LanguageContextProvider>
-      </ThemeContextProvider>
-    </Provider>
+    <Web3ReactProvider getLibrary={getLibrary}>
+      <Provider store={store}>
+        <ToastsProvider>
+          <NextThemeProvider>
+            <StyledThemeProvider>
+              <LanguageProvider>
+                <SWRConfig
+                  value={{
+                    use: [fetchStatusMiddleware],
+                  }}
+                >
+                  <ModalProvider>{children}</ModalProvider>
+                </SWRConfig>
+              </LanguageProvider>
+            </StyledThemeProvider>
+          </NextThemeProvider>
+        </ToastsProvider>
+      </Provider>
+    </Web3ReactProvider>
   )
 }
 

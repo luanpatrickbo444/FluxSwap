@@ -1,25 +1,27 @@
-import React, { useEffect, useRef } from 'react'
+import { Text, TextProps } from 'uikit'
+import { useEffect, useRef } from 'react'
 import CountUp from 'react-countup'
-import styled from 'styled-components'
-import { Text } from '@pancakeswap-libs/uikit'
-
-interface TextProps {
-  isDisabled?: boolean
-  fontSize?: string
-  color?: string
-}
+import styled, { keyframes } from 'styled-components'
 
 interface BalanceProps extends TextProps {
-  value?: number
+  value: number
   decimals?: number
   unit?: string
+  isDisabled?: boolean
+  prefix?: string
+  onClick?: (event: React.MouseEvent<HTMLElement>) => void
 }
 
-const StyledText = styled(Text)<TextProps>`
-  color: ${({ isDisabled, color, theme }) => (isDisabled ? theme.colors.textDisabled : color)};
-`
-
-const Balance: React.FC<BalanceProps> = ({ value, fontSize, color, decimals, isDisabled, unit }) => {
+const Balance: React.FC<BalanceProps> = ({
+  value,
+  color = 'text',
+  decimals = 3,
+  isDisabled = false,
+  unit,
+  prefix,
+  onClick,
+  ...props
+}) => {
   const previousValue = useRef(0)
 
   useEffect(() => {
@@ -27,18 +29,32 @@ const Balance: React.FC<BalanceProps> = ({ value, fontSize, color, decimals, isD
   }, [value])
 
   return (
-    <StyledText bold color={color} fontSize={fontSize} isDisabled={isDisabled}>
-      <CountUp start={previousValue.current} end={value} decimals={decimals} duration={1} separator="," />
-      {value && unit && <span>{unit}</span>}
-    </StyledText>
+    <Text color={isDisabled ? 'textDisabled' : color} onClick={onClick} {...props}>
+      <CountUp
+        start={previousValue.current}
+        end={value}
+        prefix={prefix}
+        suffix={unit}
+        decimals={decimals}
+        duration={1}
+        separator=","
+      />
+    </Text>
   )
 }
 
-Balance.defaultProps = {
-  fontSize: '32px',
-  isDisabled: false,
-  color: 'text',
-  decimals: 3,
-}
-
 export default Balance
+
+const appear = keyframes`
+  from {
+    opacity:0;
+  }
+
+  to {
+    opacity:1;
+  }
+`
+
+export const AnimatedBalance = styled(Balance)`
+  animation: ${appear} 0.65s ease-in-out forwards;
+`
