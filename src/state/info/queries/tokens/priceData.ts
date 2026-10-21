@@ -50,7 +50,7 @@ const fetchTokenPriceData = async (
     if (!blocks || blocks.length === 0) {
       console.error('Error fetching blocks for timestamps', timestamps)
       return {
-        error: false,
+        error: true,
       }
     }
 
@@ -64,7 +64,7 @@ const fetchTokenPriceData = async (
     if (!prices) {
       console.error('Price data failed to load')
       return {
-        error: false,
+        error: true,
       }
     }
 
@@ -78,7 +78,7 @@ const fetchTokenPriceData = async (
     // Get Token prices in BNB
     Object.keys(prices).forEach((priceKey) => {
       const timestamp = priceKey.split('t')[1]
-      // if its BNB price e.g. `b123` split('t')[1] will be undefined and skip BNB price entry
+      // if its bnb price e.g. `b123` split('t')[1] will be undefined and skip BNB price entry
       if (timestamp) {
         tokenPrices.push({
           timestamp,

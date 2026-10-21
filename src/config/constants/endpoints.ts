@@ -12,7 +12,14 @@ export const SNAPSHOT_HUB_API = `${SNAPSHOT_BASE_URL}/api/message`
  */
 export const GRAPH_API_PREDICTION_V1 = 'https://api.thegraph.com/subgraphs/name/pancakeswap/prediction'
 
-export const INFO_CLIENT = 'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
-export const BLOCKS_CLIENT = 'https://api.thegraph.com/subgraphs/name/pancakeswap/blocks'
+// Allow production deployments to use maintained GraphQL endpoints. The legacy
+// public endpoints below may redirect or stop responding; configure these
+// values in Vercel when using a provider that requires an API key.
+export const INFO_CLIENT =
+  process.env.NEXT_PUBLIC_GRAPH_API_INFO ||
+  'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
+export const BLOCKS_CLIENT =
+  process.env.NEXT_PUBLIC_GRAPH_API_BLOCKS ||
+  'https://api.thegraph.com/subgraphs/name/pancakeswap/blocks'
 export const GRAPH_API_NFTMARKET = process.env.NEXT_PUBLIC_GRAPH_API_NFT_MARKET
 export const GRAPH_HEALTH = 'https://api.thegraph.com/index-node/graphql'

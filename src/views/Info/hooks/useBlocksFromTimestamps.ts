@@ -81,7 +81,8 @@ export const useBlocksFromTimestamps = (
     const fetchData = async () => {
       const timestampsArray = JSON.parse(timestampsString)
       const result = await getBlocksFromTimestamps(timestampsArray, sortDirection, skipCount)
-      if (result.length === 0) {
+      // multiQuery returns null when the GraphQL endpoint fails.
+      if (!result || result.length === 0) {
         setError(true)
       } else {
         setBlocks(result)

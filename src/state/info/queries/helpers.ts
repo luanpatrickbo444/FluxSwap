@@ -74,22 +74,24 @@ export const fetchChartData = async (
   address?: string,
 ): Promise<{ data?: ChartEntry[]; error: boolean }> => {
   let chartEntries: ChartEntry[] = []
-  let error = false
   let skip = 0
   let allFound = false
 
   while (!allFound) {
     // eslint-disable-next-line no-await-in-loop
     const { data, error: fetchError } = await getEntityDayDatas(skip, address)
-    skip += 1000
-    allFound = data?.length < 1000
-    error = fetchError
-    if (data) {
-      chartEntries = chartEntries.concat(data)
+    // Stop immediately when GraphQL fails; otherwise undefined data can leave
+    // this loop running forever and keep charts stuck in a loading state.
+    if (fetchError || !data) {
+      return { error: true }
     }
+
+    chartEntries = chartEntries.concat(data)
+    allFound = data.length < 1000
+    skip += 1000
   }
 
-  if (error || chartEntries.length === 0) {
+  if (chartEntries.length === 0) {
     return {
       error: true,
     }
